@@ -10,10 +10,12 @@ IMAGE="$1"
 TAG="$2"
 FUNC_NAME="${IMAGE}"
 
-if [[ -z "${IMAGE_REGISTRY}" ]]; then
+if [ -z "${IMAGE_REGISTRY}" ]; then
     echo "Error: please set IMAGE_REGISTRY environment variable e.g. <aws_account_id>.dkr.ecr.us-west-2.amazonaws.com"
     exit 1
 fi
+
+echo "Image registry: ${IMAGE_REGISTRY}"
 
 IMAGE_URI="${IMAGE_REGISTRY}/${IMAGE}:${TAG}"
 
@@ -23,7 +25,7 @@ docker build -t ${IMAGE} . \
 
 # Find out if the repository already exist
 # If not, create it first before pushing the image.
-aws ecr describe-repositories --output yaml 2>&1 |grep "repositoryName: ${FUNC_NAME}$" >/dev/null
+aws ecr describe-repositories 2>&1 |grep "\"repositoryName\": \"${FUNC_NAME}\"" >/dev/null
 if [ $? -ne 0 ]         # does not exist?
 then
     echo "Repository does not exist... creating one automatically."
@@ -33,8 +35,10 @@ fi
 # Push image now!
 docker push ${IMAGE_URI}
 
+echo "Attempting to update AWS Lambda function '${FUNC_NAME}'"
+
 # Find out if the function already exist.
-aws lambda get-function-configuration --function-name ${FUNC_NAME} --output yaml 2>&1|grep FunctionName
+aws lambda get-function-configuration --function-name ${FUNC_NAME} 2>&1|grep FunctionName
 if [ $? -eq 0 ]
 then
     aws lambda update-function-code --function-name ${FUNC_NAME} --image-uri ${IMAGE_URI} --publish
