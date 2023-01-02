@@ -4,4 +4,15 @@
 
 cd /var/task
 
-LD_LIBRARY_PATH="" /usr/local/julia/bin/julia --project=. main.jl
+JULIA_LIB=$(LD_LIBRARY_PATH="" /usr/local/julia/bin/julia --compile=min -O0 --startup-file=no -E 'joinpath(dirname(Sys.BINDIR), "lib", "julia")')
+JULIA_LIB=${JULIA_LIB:1:-1}
+
+echo "Julia library folder: $JULIA_LIB"
+
+export LD_LIBRARY_PATH="${JULIA_LIB:?}:${LD_LIBRARY_PATH}"
+
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+#export LD_LIBRARY_PATH="/usr/local/julia-1.8.2/lib/julia:/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib"
+
+/usr/local/julia/bin/julia --project=. main.jl
