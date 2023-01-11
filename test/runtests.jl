@@ -1,9 +1,13 @@
-using JuliaLambdaExample
+using .jl_lambda_eval
 using Test
+using Serialization
 
-@testset "JuliaLambdaExample.jl" begin
-    result = JuliaLambdaExample.handle_event("1000000", String[])
+function test_func() 
+    run(`uname -snr`)
+end
+
+@testset "jl_lambda_eval.jl" begin
+    serialized_payload = jl_lambda_eval.serialize64(test_func)
+    result = jl_lambda_eval.handle_event(Dict("jl_data" => serialized_payload), String[])
     @test result isa String
-    @test_nowarn parse(Float64, result)
-    @test isapprox(parse(Float64, result), π, atol = 0.1)
 end
