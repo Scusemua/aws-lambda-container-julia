@@ -39,7 +39,7 @@ end
 
 # Initialize lambda function by loading user module
 try
-    @info "Loading user module"
+    @info "Loading user module " * HANDLER
     global mod, func = Symbol.(split(HANDLER, "."))
 
     @eval using $(mod)

@@ -5,11 +5,11 @@ FROM public.ecr.aws/lambda/provided:al2
 # Download and install Julia
 WORKDIR /usr/local
 RUN yum install -y tar gzip \
- && curl -LO https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.2-linux-x86_64.tar.gz \
- && tar xf julia-1.8.2-linux-x86_64.tar.gz \
- && rm julia-1.8.2-linux-x86_64.tar.gz \
- && chmod -R 755 julia-1.8.2 \
- && ln -s julia-1.8.2 julia
+    && curl -LO https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.4-linux-x86_64.tar.gz \
+    && tar xf julia-1.8.4-linux-x86_64.tar.gz \
+    && rm julia-1.8.4-linux-x86_64.tar.gz \
+    && ln -s julia-1.8.4 julia
+ #&& chmod -R 755 julia-1.8.4 \
 
 # Install application
 WORKDIR /var/task
@@ -18,9 +18,9 @@ WORKDIR /var/task
 ENV JULIA_DEPOT_PATH /var/task/.julia
 
 # Instantiate project and precompile packages
-COPY --chmod=755 Manifest.toml .
-COPY --chmod=755 Project.toml .
-RUN LD_LIBRARY_PATH="" /usr/local/julia/bin/julia --project=. -e "using Pkg; Pkg.instantiate(); Pkg.precompile()"
+COPY Manifest.toml .
+COPY Project.toml .
+RUN /usr/local/julia/bin/julia --project=. -e "using Pkg; Pkg.instantiate(); Pkg.precompile()"
 
 # Copy application code
 COPY . .
@@ -31,10 +31,10 @@ ENV JULIA_DEPOT_PATH /tmp/.julia:/var/task/.julia
 
 # Install bootstrap script
 WORKDIR /var/runtime
-COPY --chmod=755 bootstrap .
+COPY --chmod=0755 bootstrap .
 
 # Create an empty extensions directory
 WORKDIR /opt/extensions
 
 # Which module/function to call?
-CMD ["JuliaLambdaExample.handle_event"]
+CMD ["jl_lambda_eval.handle_event"]
