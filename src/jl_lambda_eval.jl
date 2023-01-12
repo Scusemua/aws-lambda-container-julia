@@ -18,27 +18,32 @@ end
 
 lambda_function(f::Function) = Base.invokelatest(f)
 
-lambda_function(e::Expr) = eval(Main, e)
+lambda_function(e::Expr) = Base.eval(Main, e)
+
+lambda_function(m::Module, e::Expr) = Base.eval(m, e)
 
 function lambda_function(v::Vector)
     for e in v[1:end-1]
-        eval(Main, e)
+        Base.eval(Main, e)
     end
-    eval(Main, v[end])
+    Base.eval(Main, v[end])
 end
 
 lambda_function_with_event(event::String) = include_string(Main, event)
 
+lambda_function_with_event(event::AbstractString) = include_string(Main, event)
+
 function execute_code(input::String)
     b64in = Base64.Base64DecodePipe(IOBuffer(input))
     code = deserialize(b64in)
-    Base.invokelatest(code)
-    result = lambda_function(code)
-    
-    return result
+    return lambda_function(code)
 end
 
 function handle_event(event_data, headers)
+    if isa(event_data, String) || isa(event_data, AbstractString)
+        event_data = JSON.parse(event_data)
+    end
+
     @info "Handling request" event_data headers
 
     if isa(event_data, Dict) && haskey(event_data, "jl_data")
@@ -46,14 +51,13 @@ function handle_event(event_data, headers)
     else
         JSON.print(Base.stdout, lambda_function_with_event(event_data))
     end
-
-    return "success"
 end
 
 context() = JSON.parsefile("/tmp/lambda_context")
 
 precompile(lambda_function, (Function,))
 precompile(lambda_function, (Expr,))
+precompile(lambda_function, (Module, Expr,))
 precompile(lambda_function, (Vector{Expr},))
 precompile(lambda_function_with_event, (String,))
 
